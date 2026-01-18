@@ -30,3 +30,13 @@ const arr = [5, 1, 3, 2, 6]
 
 ///////////////----------------Filter
 
+// filter oddvalues 
+function isEven(x) {
+    return x%2 === 0;
+}
+// const output = arr.filter(isEven);
+// console.log(output);
+
+// finding greater than 4 with arrow function
+const output = arr.filter((x) => x > 4);
+console.log(output);
