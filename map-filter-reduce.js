@@ -1,4 +1,4 @@
-// const arr = [5, 1, 3, 2, 6]
+const arr = [5, 1, 3, 2, 6]
 
 // // Double - [10, 2, 6, 4, 12]
 
@@ -23,4 +23,10 @@
 // });
 
 // console.log(output);
+
+// const output = arr.map((x) => x.toString(2));
+
+// console.log(output);
+
+///////////////----------------Filter
 
