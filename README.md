@@ -1,199 +1,332 @@
 # Armorist DeepTool API Scanner
-Security Version OWASP
 
-A comprehensive, production-ready **API security scanning microservice** built on **OWASP ZAP**,
-designed for deep vulnerability analysis of REST APIs using OpenAPI specifications and
-authenticated attack techniques.
+[![Security](https://img.shields.io/badge/Security-OWASP%20ZAP-blue)](https://www.zaproxy.org/)
+[![Python](https://img.shields.io/badge/Python-3.8+-green)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
 
-This scanner is **internal-only** and intended to be used behind the Armorist backend layer.
+A comprehensive, production-ready **API security scanning microservice** built on **OWASP ZAP**, designed for deep vulnerability analysis of REST APIs using OpenAPI specifications and authenticated attack techniques.
+
+> **⚠️ Internal Use Only**: This scanner is designed to run behind the Armorist backend layer and should never be directly exposed to the internet.
+
+---
+
+## 📋 Table of Contents
+
+- [Architecture Overview](#-architecture-overview)
+- [Quick Start](#-quick-start)
+- [Features](#-features)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [API Endpoints](#-api-endpoints)
+- [Security](#-security)
+- [Deployment](#-deployment)
+- [Testing](#-testing)
+- [Troubleshooting](#-troubleshooting)
+- [Project Structure](#-project-structure)
+
+---
+
+## 🏗 Architecture Overview
+
+```
+Frontend (Next.js) → Nginx → Backend API (8092) → API Scanner (8000)
+                                ↑
+                    Auth, Subscription, Payment Layer
+```
+
+**Key Design Principles:**
+- Scanner runs on `localhost:8000` only
+- Never exposed to the internet
+- Backend API acts as the single gateway
+- No CORS/Auth inside scanner (handled by backend)
+- Frontend never communicates with scanner directly
 
 ---
 
 ## 🚀 Quick Start
-### For Armorist.ai Integration (Backend API Layer)
 
-### Your Setup
+### Prerequisites
 
-Frontend (Next.js)  → Nginx → Backend API (8092) → API Scanner (8000)
-                                ↑
-                    Auth, Subscription, Payment Layer
+- Python 3.8+
+- OWASP ZAP installed
+- Access to Armorist backend (port 8092)
 
----
+### 1. Configure the Scanner (2 minutes)
 
-## 1. Configure Scanner (2 minutes)
-
-cd /mnt/d/git-teknomee/armorist-deeptool-api-scanner
+```bash
+cd /path/to/armorist-deeptool-api-scanner
 cp .env.development .env
-nano .env   # Update ZAP_URL and ZAP_API_KEY
-Important .env Settings
-API_HOST=127.0.0.1        # Bind to localhost only (not exposed)
-CORS_ENABLED=false        # Backend handles CORS
-ENABLE_API_AUTH=false    # Backend handles authentication
-RATE_LIMIT_ENABLED=false # Backend handles rate limiting
+nano .env
+```
 
+**Important `.env` Settings:**
+
+```bash
+# Bind to localhost only (not exposed)
+API_HOST=127.0.0.1
+API_PORT=8000
+
+# Backend handles these
+CORS_ENABLED=false
+ENABLE_API_AUTH=false
+RATE_LIMIT_ENABLED=false
+
+# ZAP Configuration
 ZAP_URL=http://127.0.0.1:8080
 ZAP_API_KEY=changeme
+```
 
----
-## 2. Start OWASP ZAP (Daemon)
+### 2. Start OWASP ZAP (Daemon Mode)
+
+```bash
 zaproxy -daemon \
   -host 127.0.0.1 \
   -port 8080 \
   -config api.disablekey=false \
   -config api.key=changeme
-Verify ZAP:
+```
 
+**Verify ZAP is Running:**
+
+```bash
 curl http://127.0.0.1:8080/JSON/core/view/version/
-### 3. Start API Scanner
+```
+
+### 3. Start the API Scanner
+
+```bash
 python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-Verify scanner:
+```
 
+**Verify Scanner:**
+
+```bash
 curl http://127.0.0.1:8000/health
+```
 
-# 4. Integrate with Your Backend (8092)
+### 4. Backend Integration
+
 Your backend proxies requests to the scanner:
 
+```
 https://uat-v1.armorist.ai/backend/api-scanner/* 
-        → Backend (8092) 
-        → API Scanner (8000)
-The scanner is never exposed publicly.
+    → Backend (8092) 
+    → API Scanner (8000)
+```
 
-📚 Documentation
-Getting Started
-Quick Start Guide – 5-minute setup
+The scanner is **never exposed publicly**.
 
-Armorist Backend Integration Guide
+---
 
-Nginx Reverse Proxy Configuration
+## 🎯 Features
 
-Security
-Security Analysis Summary
+### Scan Types
 
-OWASP ZAP Configuration Notes
+| Scan Type | Description |
+|-----------|-------------|
+| `passive_only` | Passive checks only (no active attacks) |
+| `active_full` | Full active + passive vulnerability scan |
+| `api_openapi` | OpenAPI-driven deep API scan |
 
-Sensitive Target Protection Guidelines
+### Capabilities
 
-Technical
-Scan Engine Architecture
+- ✅ OWASP ZAP active & passive scanning
+- ✅ OpenAPI / Swagger specification import
+- ✅ Authenticated API scanning
+- ✅ SQL Injection detection
+- ✅ Command Injection detection
+- ✅ Cross-Site Scripting (XSS) testing
+- ✅ Security header analysis
+- ✅ JSON + HTML report generation
+- ✅ Real-time scan status tracking
 
-Scan Type Configuration
+### Security Features
 
-JSON Report Schema
+#### Core Security Fixes
+- ✅ Constant-time API key comparison
+- ✅ Strict input validation
+- ✅ Target re-validation before scan
+- ✅ Error sanitization
+- ✅ Session isolation per scan
+- ✅ No internal stack traces leaked
 
-🔒 Security Features
-Core Security Fixes ✅
-Constant-time API key comparison
+#### Security Enhancements
+- 🔐 Request size limits (DoS protection)
+- 🛡️ Security headers (defense-in-depth)
+- 🚦 Backend-enforced rate limiting
+- 🌐 CORS fully disabled
+- 📝 Strict schema-based request validation
 
-Strict input validation
+---
 
-Target re-validation before scan
+## 💾 Installation
 
-Error sanitization
+### Clone the Repository
 
-Session isolation per scan
+```bash
+git clone https://github.com/armorist/armorist-deeptool-api-scanner.git
+cd armorist-deeptool-api-scanner
+```
 
-No internal stack traces leaked
+### Install Dependencies
 
-Security Enhancements
-🔐 Request size limits (DoS protection)
+```bash
+pip3 install -r requirements.txt
+```
 
-🛡️ Security headers (defense-in-depth)
+### Install OWASP ZAP
 
-🚦 Backend-enforced rate limiting
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install zaproxy
+```
 
-🌐 CORS fully disabled
+**macOS:**
+```bash
+brew install --cask owasp-zap
+```
 
-📝 Strict schema-based request validation
+---
 
-🎯 Features
-Scan Types
-Scan Type	Description
-passive_only	Passive checks only (no active attacks)
-active_full	Full active + passive vulnerability scan
-api_openapi	OpenAPI-driven deep API scan
-Capabilities
-OWASP ZAP active & passive scanning
+## ⚙️ Configuration
 
-OpenAPI / Swagger import
+### Environment Files
 
-Authenticated API scanning
+#### Development/UAT
 
-SQL Injection detection
-
-Command Injection detection
-
-XSS testing
-
-Security header analysis
-
-JSON + HTML reports
-
-Real-time scan status tracking
-
-📦 Project Structure
-armorist-deeptool-api-scanner/
--------------
-├── app/
-│   ├── api/
-│   │   └── v1/
-│   │       └── routes_scan.py
-│   ├── services/
-│   │   └── zap_service.py
-│   ├── schemas/
-│   │   └── scan.py
-│   ├── core/
-│   │   └── config.py
-│   └── main.py
-├── reports/
-│   ├── scan_0.html
-│   └── scan_0.json
-├── .env.development
-├── .env.production
-├── .env.example
-└── README.md
-🔧 Configuration Files
-UAT / Development
+```bash
 cp .env.development .env
-CORS disabled
+```
 
-API auth disabled
+Features:
+- CORS disabled
+- API auth disabled
+- Localhost-only binding
+- Verbose logging
 
-Localhost-only binding
+#### Production
 
-Verbose logging
-
-Production
+```bash
 cp .env.production .env
-Strict security settings
+```
 
-Production logging
+Features:
+- Strict security settings
+- Production logging level
+- Localhost-only binding
+- Backend-enforced authentication
 
-Localhost-only binding
+### Configuration Reference
 
-Backend-enforced authentication
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `API_HOST` | `127.0.0.1` | Scanner bind address |
+| `API_PORT` | `8000` | Scanner port |
+| `ZAP_URL` | `http://127.0.0.1:8080` | ZAP daemon URL |
+| `ZAP_API_KEY` | `changeme` | ZAP API key |
+| `CORS_ENABLED` | `false` | CORS handling |
+| `ENABLE_API_AUTH` | `false` | API authentication |
+| `RATE_LIMIT_ENABLED` | `false` | Rate limiting |
 
-🧪 Testing
-Test Scanner Directly (Localhost)
-curl http://127.0.0.1:8000/health
-Start Scan
-curl -X POST http://127.0.0.1:8000/scan \
-  -H "Content-Type: application/json" \
-  -d '{
-    "target": "https://api.example.com",
-    "openapi": "https://api.example.com/openapi.json",
-    "scan_type": "api_openapi"
-  }'
-Check Status
-curl http://127.0.0.1:8000/scan/status/0
-🚀 Deployment
-Development (UAT)
+---
+
+## 📡 API Endpoints
+
+> **Note:** All endpoints are accessed via backend proxy at `/backend/api-scanner/*`
+
+### Scans
+
+#### Start a New Scan
+```http
+POST /backend/api-scanner/scan
+Content-Type: application/json
+
+{
+  "target": "https://api.example.com",
+  "openapi": "https://api.example.com/openapi.json",
+  "scan_type": "api_openapi"
+}
+```
+
+#### Get Scan Status
+```http
+GET /backend/api-scanner/scan/{scan_id}
+```
+
+#### Get HTML Report
+```http
+GET /backend/api-scanner/scan/{scan_id}/report
+```
+
+#### Get JSON Report
+```http
+GET /backend/api-scanner/scan/{scan_id}/report/json
+```
+
+### Management
+
+#### Health Check
+```http
+GET /backend/api-scanner/health
+```
+
+---
+
+## 🔒 Security
+
+### Architecture Advantages
+
+- ✅ Backend handles authentication, subscriptions, and billing
+- ✅ Scanner never exposed to the internet
+- ✅ Centralized access control
+- ✅ Easier auditing and monitoring
+- ✅ Defense in depth approach
+
+### Firewall Configuration
+
+```bash
+# Deny external access to scanner port
+sudo ufw deny 8000
+
+# Allow localhost access only
+sudo ufw allow from 127.0.0.1 to any port 8000
+```
+
+### Security Best Practices
+
+1. **Never expose port 8000** to the internet
+2. **Always use the backend proxy** for scanner access
+3. **Rotate ZAP API keys** regularly
+4. **Monitor scanner logs** for suspicious activity
+5. **Keep OWASP ZAP updated** to the latest version
+
+---
+
+## 🚀 Deployment
+
+### Development/UAT
+
+```bash
+# Copy development config
 cp .env.development .env
-python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-Verify:
 
+# Start the scanner
+python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Verify
 curl http://127.0.0.1:8000/health
-Production (Systemd)
+```
+
+### Production (Systemd)
+
+#### 1. Create Service File
+
+```bash
 sudo nano /etc/systemd/system/armorist-api-scanner.service
+```
+
+```ini
 [Unit]
 Description=Armorist Deep API Scanner
 After=network.target
@@ -203,71 +336,176 @@ User=armorist
 WorkingDirectory=/opt/armorist-deeptool-api-scanner
 ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
+```
+
+#### 2. Enable and Start Service
+
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable armorist-api-scanner
 sudo systemctl start armorist-api-scanner
 sudo systemctl status armorist-api-scanner
-🔐 Security Considerations
-Architecture Advantages
-✅ Backend handles auth, subscription, billing
-✅ Scanner never exposed to internet
-✅ Centralized access control
-✅ Easier auditing and monitoring
+```
 
-Firewall Rules
-sudo ufw deny 8000
-sudo ufw allow from 127.0.0.1 to any port 8000
-📊 API Endpoints
-(Accessed via backend proxy)
+---
 
-Scans
-POST   /backend/api-scanner/scan
-GET    /backend/api-scanner/scan/{scan_id}
-GET    /backend/api-scanner/scan/{scan_id}/report
-GET    /backend/api-scanner/scan/{scan_id}/report/json
-Management
-GET /backend/api-scanner/health
-📈 Monitoring
-Logs
-journalctl -u armorist-api-scanner -f
-Health Check
+## 🧪 Testing
+
+### Test Scanner Directly (Localhost)
+
+```bash
+# Health check
 curl http://127.0.0.1:8000/health
-🆘 Troubleshooting
-Scanner Not Running
+```
+
+### Start a Scan
+
+```bash
+curl -X POST http://127.0.0.1:8000/scan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target": "https://api.example.com",
+    "openapi": "https://api.example.com/openapi.json",
+    "scan_type": "api_openapi"
+  }'
+```
+
+### Check Scan Status
+
+```bash
+curl http://127.0.0.1:8000/scan/status/0
+```
+
+---
+
+## 🆘 Troubleshooting
+
+### Scanner Not Running
+
+```bash
+# Check service status
 sudo systemctl status armorist-api-scanner
+
+# Start service
 sudo systemctl start armorist-api-scanner
-Backend Cannot Connect
+
+# View logs
+journalctl -u armorist-api-scanner -f
+```
+
+### Backend Cannot Connect
+
+```bash
+# Test scanner directly
 curl http://127.0.0.1:8000/health
+
+# Check if process is running
 ps aux | grep uvicorn
-📋 Changelog
-v1.0.0
-Initial release
 
-Deep API scanning via OWASP ZAP
+# Check port binding
+netstat -tlnp | grep 8000
+```
 
-OpenAPI-driven scans
+### ZAP Not Responding
 
-JSON & HTML reporting
+```bash
+# Check ZAP status
+curl http://127.0.0.1:8080/JSON/core/view/version/
 
-Backend-only integration model
+# Restart ZAP
+pkill -f zaproxy
+zaproxy -daemon -host 127.0.0.1 -port 8080 -config api.key=changeme
+```
 
-📄 License
+---
+
+## 📊 Monitoring
+
+### View Logs
+
+```bash
+# Real-time logs
+journalctl -u armorist-api-scanner -f
+
+# Last 100 lines
+journalctl -u armorist-api-scanner -n 100
+
+# Logs since today
+journalctl -u armorist-api-scanner --since today
+```
+
+### Health Monitoring
+
+```bash
+# Basic health check
+curl http://127.0.0.1:8000/health
+
+# Monitor continuously
+watch -n 5 'curl -s http://127.0.0.1:8000/health | jq'
+```
+
+---
+
+## 📦 Project Structure
+
+```
+armorist-deeptool-api-scanner/
+├── app/
+│   ├── api/
+│   │   └── v1/
+│   │       └── routes_scan.py       # API route handlers
+│   ├── services/
+│   │   └── zap_service.py           # ZAP integration service
+│   ├── schemas/
+│   │   └── scan.py                  # Pydantic models
+│   ├── core/
+│   │   └── config.py                # Configuration management
+│   └── main.py                      # FastAPI application
+├── reports/                         # Generated scan reports
+│   ├── scan_0.html
+│   └── scan_0.json
+├── .env.development                 # Development config
+├── .env.production                  # Production config
+├── .env.example                     # Example config
+├── requirements.txt                 # Python dependencies
+└── README.md                        # This file
+```
+
+---
+
+## 📋 Changelog
+
+### v1.0.0 (Initial Release)
+- ✨ Deep API scanning via OWASP ZAP
+- ✨ OpenAPI-driven scans
+- ✨ JSON & HTML reporting
+- ✨ Backend-only integration model
+- 🔒 Production-ready security features
+
+---
+
+## 📄 License
+
 Proprietary – Armorist Security Platform
 
-✨ Key Points for Armorist.ai
-Scanner runs on localhost:8000
+---
 
-Never internet-exposed
+## 📚 Additional Resources
 
-Backend API is the single gateway
+- [OWASP ZAP Documentation](https://www.zaproxy.org/docs/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [OpenAPI Specification](https://swagger.io/specification/)
 
-No CORS / Auth inside scanner
+---
 
-Frontend never talks to scanner directly
+## 🤝 Support
 
-Designed for deep API security testing
+For internal support, contact the Armorist security team.
 
-Built for internal security operations. Ready for production. 🔒
+---
+
+**Built for internal security operations. Ready for production.** 🔒
