@@ -22,7 +22,6 @@ Frontend (Next.js) → Nginx → Backend API (8092) → API Scanner (8000)
 
 ## 1. Configure Scanner (2 minutes)
 
-```bash
 cd /mnt/d/git-teknomee/armorist-deeptool-api-scanner
 cp .env.development .env
 nano .env   # Update ZAP_URL and ZAP_API_KEY
@@ -43,12 +42,13 @@ zaproxy -daemon \
 Verify ZAP:
 
 curl http://127.0.0.1:8080/JSON/core/view/version/
-3. Start API Scanner
+### 3. Start API Scanner
 python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 Verify scanner:
 
 curl http://127.0.0.1:8000/health
-4. Integrate with Your Backend (8092)
+
+# 4. Integrate with Your Backend (8092)
 Your backend proxies requests to the scanner:
 
 https://uat-v1.armorist.ai/backend/api-scanner/* 
