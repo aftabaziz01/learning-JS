@@ -14,7 +14,7 @@ This scanner is **internal-only** and intended to be used behind the Armorist ba
 
 ### Your Setup
 
-Frontend (Next.js) → Nginx → Backend API (8092) → API Scanner (8000)
+Frontend (Next.js)  → Nginx → Backend API (8092) → API Scanner (8000)
                                 ↑
                     Auth, Subscription, Payment Layer
 
@@ -33,7 +33,9 @@ RATE_LIMIT_ENABLED=false # Backend handles rate limiting
 
 ZAP_URL=http://127.0.0.1:8080
 ZAP_API_KEY=changeme
-2. Start OWASP ZAP (Daemon)
+
+---
+## 2. Start OWASP ZAP (Daemon)
 zaproxy -daemon \
   -host 127.0.0.1 \
   -port 8080 \
@@ -130,6 +132,7 @@ Real-time scan status tracking
 
 📦 Project Structure
 armorist-deeptool-api-scanner/
+-------------
 ├── app/
 │   ├── api/
 │   │   └── v1/
