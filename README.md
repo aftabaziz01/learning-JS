@@ -113,23 +113,18 @@ This scanner detects vulnerabilities supported by OWASP ZAP, including:
 
 ## Example Scan Request
 
-```json
+json
 {
   "target": "https://uat-v1.armorist.ai",
   "openapi": "https://uat-v1.armorist.ai/openapi.json",
   "api_key": "**************",
   "scan_type": "api_openapi"
 }
-If openapi is not provided, the scanner falls back to crawl-based discovery.
 
-  "target": "https://uat-v1.armorist.ai",
-  "openapi": "https://uat-v1.armorist.ai/openapi.json",
-  "api_key": "**************",
-  "scan_type": "api_openapi"
-}
 If openapi is not provided, the scanner falls back to crawl-based discovery.
 
 Internal API Endpoints
+
 ⚠️ Internal use only – consumed by Armorist backend
 
 Scan Control
