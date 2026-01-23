@@ -1,170 +1,134 @@
 # Armorist DeepTool API Scanner
+Security Version OWASP
 
-**Internal Deep API Security Scanner (OWASP ZAP Powered)**  
-**Purpose:** Deep, authenticated API vulnerability scanning  
-**Exposure:** Internal only (NOT internet-facing)
+A comprehensive, production-ready **API security scanning microservice** built on **OWASP ZAP**,
+designed for deep vulnerability analysis of REST APIs using OpenAPI specifications and
+authenticated attack techniques.
 
----
-
-## Overview
-
-Armorist DeepTool API Scanner is an **internal backend service** built to perform
-**deep security scanning of APIs** using **OWASP ZAP**.
-
-This scanner is **not exposed publicly** and is **never called directly by frontend clients**.
-All access is strictly routed through the **Armorist Backend API**, which handles:
-
-- Authentication
-- Authorization
-- Subscription & billing
-- Rate limiting
-- User validation
-
-The scanner’s only responsibility is **security scanning**.
+This scanner is **internal-only** and intended to be used behind the Armorist backend layer.
 
 ---
 
-## Architecture
+## 🚀 Quick Start
+### For Armorist.ai Integration (Backend API Layer)
 
-Frontend (Next.js)
-|
-v
-Armorist Backend API
-(Auth, RBAC, Billing)
-|
-v
-DeepTool API Scanner (localhost:8000)
-|
-v
-OWASP ZAP (daemon)
+### Your Setup
+
+Frontend (Next.js) → Nginx → Backend API (8092) → API Scanner (8000)
+                                ↑
+                    Auth, Subscription, Payment Layer
 
 ---
 
-## What This Scanner Does
+## 1. Configure Scanner (2 minutes)
 
-- Deep API vulnerability scanning
-- OWASP ZAP Active & Passive scans
-- Authenticated API testing
-  - API Key (header-based)
-  - Bearer Token (JWT / OAuth tokens)
-- OpenAPI / Swagger based API discovery
-- Crawl-based scanning if OpenAPI not provided
-- Scan progress tracking
-- HTML report generation
-- JSON report generation (frontend-friendly)
+```bash
+cd /mnt/d/git-teknomee/armorist-deeptool-api-scanner
+cp .env.development .env
+nano .env   # Update ZAP_URL and ZAP_API_KEY
+Important .env Settings
+API_HOST=127.0.0.1        # Bind to localhost only (not exposed)
+CORS_ENABLED=false        # Backend handles CORS
+ENABLE_API_AUTH=false    # Backend handles authentication
+RATE_LIMIT_ENABLED=false # Backend handles rate limiting
 
----
+ZAP_URL=http://127.0.0.1:8080
+ZAP_API_KEY=changeme
+2. Start OWASP ZAP (Daemon)
+zaproxy -daemon \
+  -host 127.0.0.1 \
+  -port 8080 \
+  -config api.disablekey=false \
+  -config api.key=changeme
+Verify ZAP:
 
-## What This Scanner Does NOT Do
+curl http://127.0.0.1:8080/JSON/core/view/version/
+3. Start API Scanner
+python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Verify scanner:
 
-- User authentication
-- Subscription checks
-- Payment handling
-- Rate limiting
-- Frontend validation
-- Public exposure
+curl http://127.0.0.1:8000/health
+4. Integrate with Your Backend (8092)
+Your backend proxies requests to the scanner:
 
-All of the above are handled by the Armorist backend.
+https://uat-v1.armorist.ai/backend/api-scanner/* 
+        → Backend (8092) 
+        → API Scanner (8000)
+The scanner is never exposed publicly.
 
----
+📚 Documentation
+Getting Started
+Quick Start Guide – 5-minute setup
 
-## Vulnerability Coverage
+Armorist Backend Integration Guide
 
-This scanner detects vulnerabilities supported by OWASP ZAP, including:
+Nginx Reverse Proxy Configuration
 
-- SQL Injection
-- Command Injection
-- Cross-Site Scripting (XSS)
-- Server-Side Request Forgery (SSRF)
-- Insecure HTTP Headers
-- Authentication misconfigurations
-- Authorization issues (IDOR patterns via ZAP)
-- Sensitive data exposure
-- OWASP API Top 10 (where applicable)
+Security
+Security Analysis Summary
 
----
+OWASP ZAP Configuration Notes
 
-## Scan Types
+Sensitive Target Protection Guidelines
 
-| Scan Type | Description |
-|---------|-------------|
-| `active_full` | Full active + passive scan (default) |
-| `api_openapi` | OpenAPI-driven deep API scan |
-| `passive_only` | Passive scan only |
+Technical
+Scan Engine Architecture
 
----
+Scan Type Configuration
 
-## API Input
+JSON Report Schema
 
-### Required Field
+🔒 Security Features
+Core Security Fixes ✅
+Constant-time API key comparison
 
-- `target`  
-  Base API URL  
-  Example: `https://api.example.com`
+Strict input validation
 
-### Optional Fields
+Target re-validation before scan
 
-- `openapi` – OpenAPI / Swagger spec URL
-- `api_key` – API key for header-based auth
-- `auth_token` – Bearer token for authenticated APIs
-- `scan_type` – Type of scan (`active_full`, `api_openapi`, `passive_only`)
+Error sanitization
 
----
+Session isolation per scan
 
-## Example Scan Request
+No internal stack traces leaked
 
-json
-{
-  "target": "https://uat-v1.armorist.ai",
-  "openapi": "https://uat-v1.armorist.ai/openapi.json",
-  "api_key": "**************",
-  "scan_type": "api_openapi"
-}
+Security Enhancements
+🔐 Request size limits (DoS protection)
 
-If openapi is not provided, the scanner falls back to crawl-based discovery.
+🛡️ Security headers (defense-in-depth)
 
-Internal API Endpoints
+🚦 Backend-enforced rate limiting
 
-⚠️ Internal use only – consumed by Armorist backend
+🌐 CORS fully disabled
 
-Scan Control
-| Method | Endpoint                      | Description          |
-| ------ | ----------------------------- | -------------------- |
-| POST   | `/scan`                       | Start a new scan     |
-| GET    | `/scan/status/{scan_id}`      | Get scan progress    |
-| GET    | `/scan/report/{scan_id}`      | Download HTML report |
-| GET    | `/scan/report/json/{scan_id}` | Fetch JSON report    |
+📝 Strict schema-based request validation
 
-JSON Report Format
+🎯 Features
+Scan Types
+Scan Type	Description
+passive_only	Passive checks only (no active attacks)
+active_full	Full active + passive vulnerability scan
+api_openapi	OpenAPI-driven deep API scan
+Capabilities
+OWASP ZAP active & passive scanning
 
-The JSON report is designed for frontend visualization.
-{
-  "scan_id": "0",
-  "summary": {
-    "critical": 1,
-    "high": 3,
-    "medium": 5,
-    "low": 7,
-    "info": 10
-  },
-  "vulnerabilities": [
-    {
-      "name": "SQL Injection",
-      "risk": "High",
-      "confidence": "High",
-      "url": "/api/users",
-      "param": "id",
-      "attack": "1 OR 1=1",
-      "evidence": "SQL syntax error",
-      "description": "Unsanitized input in SQL query",
-      "solution": "Use parameterized queries",
-      "cwe": 89,
-      "wasc": 19
-    }
-  ]
-}
+OpenAPI / Swagger import
 
-Project Structure
+Authenticated API scanning
+
+SQL Injection detection
+
+Command Injection detection
+
+XSS testing
+
+Security header analysis
+
+JSON + HTML reports
+
+Real-time scan status tracking
+
+📦 Project Structure
 armorist-deeptool-api-scanner/
 ├── app/
 │   ├── api/
@@ -180,42 +144,127 @@ armorist-deeptool-api-scanner/
 ├── reports/
 │   ├── scan_0.html
 │   └── scan_0.json
+├── .env.development
+├── .env.production
+├── .env.example
 └── README.md
+🔧 Configuration Files
+UAT / Development
+cp .env.development .env
+CORS disabled
 
-Configuration
-Environment Variables
-ZAP_URL=http://127.0.0.1:8080
-ZAP_API_KEY=********
+API auth disabled
 
-Running the Scanner
-Start OWASP ZAP
-zaproxy -daemon -port 8080 -config api.disablekey=true
+Localhost-only binding
 
-Security Model
+Verbose logging
 
-Scanner binds to 127.0.0.1
+Production
+cp .env.production .env
+Strict security settings
 
-Not exposed to the internet
+Production logging
 
-Backend is the only consumer
+Localhost-only binding
 
-Firewall blocks external access
+Backend-enforced authentication
 
-Clear separation of responsibilities
+🧪 Testing
+Test Scanner Directly (Localhost)
+curl http://127.0.0.1:8000/health
+Start Scan
+curl -X POST http://127.0.0.1:8000/scan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target": "https://api.example.com",
+    "openapi": "https://api.example.com/openapi.json",
+    "scan_type": "api_openapi"
+  }'
+Check Status
+curl http://127.0.0.1:8000/scan/status/0
+🚀 Deployment
+Development (UAT)
+cp .env.development .env
+python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Verify:
 
+curl http://127.0.0.1:8000/health
+Production (Systemd)
+sudo nano /etc/systemd/system/armorist-api-scanner.service
+[Unit]
+Description=Armorist Deep API Scanner
+After=network.target
+
+[Service]
+User=armorist
+WorkingDirectory=/opt/armorist-deeptool-api-scanner
+ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+sudo systemctl daemon-reload
+sudo systemctl enable armorist-api-scanner
+sudo systemctl start armorist-api-scanner
+sudo systemctl status armorist-api-scanner
+🔐 Security Considerations
+Architecture Advantages
+✅ Backend handles auth, subscription, billing
+✅ Scanner never exposed to internet
+✅ Centralized access control
+✅ Easier auditing and monitoring
+
+Firewall Rules
+sudo ufw deny 8000
+sudo ufw allow from 127.0.0.1 to any port 8000
+📊 API Endpoints
+(Accessed via backend proxy)
+
+Scans
+POST   /backend/api-scanner/scan
+GET    /backend/api-scanner/scan/{scan_id}
+GET    /backend/api-scanner/scan/{scan_id}/report
+GET    /backend/api-scanner/scan/{scan_id}/report/json
+Management
+GET /backend/api-scanner/health
+📈 Monitoring
+Logs
+journalctl -u armorist-api-scanner -f
 Health Check
 curl http://127.0.0.1:8000/health
+🆘 Troubleshooting
+Scanner Not Running
+sudo systemctl status armorist-api-scanner
+sudo systemctl start armorist-api-scanner
+Backend Cannot Connect
+curl http://127.0.0.1:8000/health
+ps aux | grep uvicorn
+📋 Changelog
+v1.0.0
+Initial release
 
-Summary
+Deep API scanning via OWASP ZAP
 
-Internal-only API security scanner
+OpenAPI-driven scans
 
-Powered by OWASP ZAP
+JSON & HTML reporting
 
-Deep, authenticated API scanning
+Backend-only integration model
 
-Backend-controlled access
+📄 License
+Proprietary – Armorist Security Platform
 
-Frontend consumes structured JSON reports
+✨ Key Points for Armorist.ai
+Scanner runs on localhost:8000
 
-Designed for Armorist production architecture
+Never internet-exposed
+
+Backend API is the single gateway
+
+No CORS / Auth inside scanner
+
+Frontend never talks to scanner directly
+
+Designed for deep API security testing
+
+Built for internal security operations. Ready for production. 🔒
