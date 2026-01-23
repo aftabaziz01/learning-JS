@@ -195,3 +195,32 @@ ZAP_API_KEY=********
 Running the Scanner
 Start OWASP ZAP
 zaproxy -daemon -port 8080 -config api.disablekey=true
+
+Security Model
+
+Scanner binds to 127.0.0.1
+
+Not exposed to the internet
+
+Backend is the only consumer
+
+Firewall blocks external access
+
+Clear separation of responsibilities
+
+Health Check
+curl http://127.0.0.1:8000/health
+
+Summary
+
+Internal-only API security scanner
+
+Powered by OWASP ZAP
+
+Deep, authenticated API scanning
+
+Backend-controlled access
+
+Frontend consumes structured JSON reports
+
+Designed for Armorist production architecture
